@@ -40,7 +40,7 @@ parameters.
 
 Authors
 -------
-Tom J. Pollard (tom.pollard.11@ucl.ac.uk)
+Tom J. Pollard (https://twitter.com/tompollard)
 
 Ported from MATLAB implementation by 
   Gavin C. Cawley and Nicola L. C. Talbot
