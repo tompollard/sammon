@@ -5,7 +5,10 @@ Date: 18 April 2014
 sammontest.py
 -------------
 Run sammontest.py() with no arguments to test sammon.py
-on Fisher's iris dataset
+on Fisher's iris dataset. You should get an output image 
+as the one shown below:
+
+![alt tag](http://i.imgur.com/ngfNeEn.png)
 
 sammon.py
 ---------
