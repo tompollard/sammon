@@ -26,7 +26,7 @@ def sammon(x, n, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 500, 
        input          - {'raw','distance'} if set to 'distance', X is 
                         interpreted as a matrix of pairwise distances.
        display        - 0 to 2. 0 least verbose, 2 max verbose.
-       init           - {'pca', 'mdscale', random', 'default'}
+       init           - {'pca', 'cmdscale', random', 'default'}
                         default is 'pca' if input is 'raw', 
                         'msdcale' if input is 'distance'
 
