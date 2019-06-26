@@ -95,7 +95,6 @@ def sammon(x, n, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 500, 
     elif init == 'cmdscale':
         from cmdscale import cmdscale
         y,e = cmdscale(D)
-        print(y.shape)
         y = y[:,:n]
     else:
         y = np.random.normal(0.0,1.0,[N,n])
