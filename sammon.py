@@ -114,14 +114,14 @@ def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 5
             if E_new < E:
                 break
             else:
-                s = np.dot(0.5,s)
+                s = 0.5*s
 
         # Bomb out if too many halving steps are required
         if j == maxhalves-1:
             print('Warning: maxhalves exceeded. Sammon mapping may not converge...')
 
         # Evaluate termination criterion
-        if np.abs((E - E_new) / E) < tolfun:
+        if abs((E - E_new) / E) < tolfun:
             if display:
                 print('TolFun exceeded: Optimisation terminated')
             break
