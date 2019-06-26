@@ -77,6 +77,9 @@ def sammon(x, n, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 500, 
     if inputdist == 'distance' and init == 'pca':
         raise ValueError("Cannot use init == 'pca' when inputdist == 'distance'")
 
+    if np.count_nonzero(np.diagonal(D)) > 0:
+        raise ValueError("The diagonal of the dissimilarity matrix must be zero")
+
     # Remaining initialisation
     N = x.shape[0]
     scale = 0.5 / D.sum()
