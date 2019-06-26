@@ -79,8 +79,7 @@ def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 5
     N = x.shape[0]
     scale = 0.5 / D.sum()
     D = D + np.eye(N)
-    Dinv = 1 / D # Returns inf where D = 0.
-    Dinv[np.isinf(Dinv)] = 0 # Fix by replacing inf with 0 (default Matlab behaviour).
+    Dinv = 1 / D
     if init == 'pca':
         [UU,DD,_] = np.linalg.svd(x)
         y = UU[:,:n]*DD[:n] 
@@ -88,8 +87,7 @@ def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 5
         y = np.random.normal(0.0,1.0,[N,n])
     one = np.ones([N,n])
     d = euclid(y,y) + np.eye(N)
-    dinv = 1. / d # Returns inf where d = 0. 
-    dinv[np.isinf(dinv)] = 0 # Fix by replacing inf with 0 (default Matlab behaviour).
+    dinv = 1. / d
     delta = D-d 
     E = ((delta**2)*Dinv).sum() 
 
@@ -114,8 +112,7 @@ def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 5
             s_reshape = s.reshape(2,len(s)/2).T
             y = y_old + s_reshape
             d = euclid(y, y) + np.eye(N)
-            dinv = 1 / d # Returns inf where D = 0. 
-            dinv[np.isinf(dinv)] = 0 # Fix by replacing inf with 0 (default Matlab behaviour).
+            dinv = 1 / d
             delta = D - d
             E_new = ((delta**2)*Dinv).sum()
             if E_new < E:
