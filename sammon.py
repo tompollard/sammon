@@ -1,4 +1,4 @@
-def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 500, tolfun = 1e-9, init = 'pca'):
+def sammon(x, n, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 500, tolfun = 1e-9, init = 'default'):
 
     import numpy as np 
     from scipy.spatial.distance import cdist
@@ -26,7 +26,9 @@ def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 5
        input          - {'raw','distance'} if set to 'distance', X is 
                         interpreted as a matrix of pairwise distances.
        display        - 0 to 2. 0 least verbose, 2 max verbose.
-       init           - {'pca', 'random'}
+       init           - {'pca', 'mdscale', random', 'default'}
+                        default is 'pca' if input is 'raw', 
+                        'msdcale' if input is 'distance'
 
     The default options are retrieved by calling sammon(x) with no
     parameters.
@@ -65,20 +67,32 @@ def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 5
     # Create distance matrix unless given by parameters
     if inputdist == 'distance':
         D = x
+        if init == 'default':
+            init = 'cmdscale'
     else:
         D = cdist(x, x)
+        if init == 'default':
+            init = 'pca'
 
     if np.count_nonzero(D<=0) > 0:
         raise ValueError("Off-diagonal dissimilarities must be strictly positive")
 
+    if inputdist == 'distance' and init == 'pca':
+        raise ValueError("Cannot use init == 'pca' when inputdist == 'distance'")
+
     # Remaining initialisation
     N = x.shape[0]
     scale = 0.5 / D.sum()
-    D = D + np.eye(N)
+    D = D + np.eye(N)        
     Dinv = 1 / D
     if init == 'pca':
         [UU,DD,_] = np.linalg.svd(x)
         y = UU[:,:n]*DD[:n] 
+    elif init == 'cmdscale':
+        from cmdscale import cmdscale
+        y,e = cmdscale(D)
+        print(y.shape)
+        y = y[:,:n]
     else:
         y = np.random.normal(0.0,1.0,[N,n])
     one = np.ones([N,n])
