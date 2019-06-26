@@ -74,16 +74,17 @@ def sammon(x, n, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 500, 
         if init == 'default':
             init = 'pca'
 
-    if np.count_nonzero(D<=0) > 0:
-        raise ValueError("Off-diagonal dissimilarities must be strictly positive")
-
     if inputdist == 'distance' and init == 'pca':
         raise ValueError("Cannot use init == 'pca' when inputdist == 'distance'")
 
     # Remaining initialisation
     N = x.shape[0]
     scale = 0.5 / D.sum()
-    D = D + np.eye(N)        
+    D = D + np.eye(N)     
+
+    if np.count_nonzero(D<=0) > 0:
+        raise ValueError("Off-diagonal dissimilarities must be strictly positive")   
+
     Dinv = 1 / D
     if init == 'pca':
         [UU,DD,_] = np.linalg.svd(x)
