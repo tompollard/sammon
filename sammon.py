@@ -72,8 +72,11 @@ def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 5
     else:
         D = euclid(x,x)
 
+    if np.count_nonzero(D<=0) > 0:
+        raise ValueError("Off-diagonal dissimilarities must be strictly positive")
+
     # Remaining initialisation
-    N = x.shape[0] # hmmm, shape[1]?
+    N = x.shape[0]
     scale = 0.5 / D.sum()
     D = D + np.eye(N)
     Dinv = 1 / D # Returns inf where D = 0.
@@ -121,7 +124,7 @@ def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 5
                 s = np.dot(0.5,s)
 
         # Bomb out if too many halving steps are required
-        if j == maxhalves:
+        if j == maxhalves-1:
             print('Warning: maxhalves exceeded. Sammon mapping may not converge...')
 
         # Evaluate termination criterion
@@ -133,7 +136,10 @@ def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 5
         # Report progress
         E = E_new
         if display > 1:
-            print('epoch = ' + str(i) + ': E = ' + str(E * scale))
+            print('epoch = %d : E = %12.10f'% (i+1, E * scale))
+
+    if i == maxiter-1:
+        print('Warning: maxiter exceeded. Sammon mapping may not have converged...')
 
     # Fiddle stress to match the original Sammon paper
     E = E * scale
