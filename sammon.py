@@ -1,6 +1,7 @@
 def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 500, tolfun = 1e-9, init = 'pca'):
 
     import numpy as np 
+    from scipy.spatial.distance import cdist
 
     """Perform Sammon mapping on dataset x
 
@@ -61,16 +62,11 @@ def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 5
 
     """
 
-    def euclid(a,b):
-        d = np.sqrt( ((a**2).sum(axis=1)*np.ones([1,b.shape[0]]).T).T + \
-            np.ones([a.shape[0],1])*(b**2).sum(axis=1)-2*(np.dot(a,b.T)))
-        return d
-
     # Create distance matrix unless given by parameters
     if inputdist == 'distance':
         D = x
     else:
-        D = euclid(x,x)
+        D = cdist(x, x)
 
     if np.count_nonzero(D<=0) > 0:
         raise ValueError("Off-diagonal dissimilarities must be strictly positive")
@@ -86,7 +82,7 @@ def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 5
     else:
         y = np.random.normal(0.0,1.0,[N,n])
     one = np.ones([N,n])
-    d = euclid(y,y) + np.eye(N)
+    d = cdist(y,y) + np.eye(N)
     dinv = 1. / d
     delta = D-d 
     E = ((delta**2)*Dinv).sum() 
@@ -111,7 +107,7 @@ def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 5
         for j in range(maxhalves):
             s_reshape = s.reshape(2,len(s)/2).T
             y = y_old + s_reshape
-            d = euclid(y, y) + np.eye(N)
+            d = cdist(y, y) + np.eye(N)
             dinv = 1 / d
             delta = D - d
             E_new = ((delta**2)*Dinv).sum()
