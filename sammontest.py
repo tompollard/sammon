@@ -1,6 +1,6 @@
 def main():
 
-   import numpy as np 
+   import numpy as np
    from sklearn import datasets
    import matplotlib.pyplot as plt
    from sammon import sammon
@@ -26,12 +26,12 @@ def main():
    """
    # Load the iris data
    iris = datasets.load_iris()
-   X = iris.data
-   target = iris.target
+   (x,index) = np.unique(iris.data,axis=0,return_index=True)
+   target = iris.target[index]
    names = iris.target_names
 
    # Run the Sammon projection
-   [y,E] = sammon(X)
+   [y,E] = sammon(x, 2)
 
    # Plot
    plt.scatter(y[target ==0, 0], y[target ==0, 1], s=20, c='r', marker='o',label=names[0])

@@ -1,4 +1,4 @@
-def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 500, tolfun = 1e-9, init = 'pca'):
+def sammon(x, n, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 500, tolfun = 1e-9, init = 'default'):
 
     import numpy as np 
     from scipy.spatial.distance import cdist
@@ -26,7 +26,9 @@ def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 5
        input          - {'raw','distance'} if set to 'distance', X is 
                         interpreted as a matrix of pairwise distances.
        display        - 0 to 2. 0 least verbose, 2 max verbose.
-       init           - {'pca', 'random'}
+       init           - {'pca', 'cmdscale', random', 'default'}
+                        default is 'pca' if input is 'raw', 
+                        'msdcale' if input is 'distance'
 
     The default options are retrieved by calling sammon(x) with no
     parameters.
@@ -61,49 +63,46 @@ def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 5
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
     """
-#
-#    def euclid(a,b):
-#        d = np.sqrt( ((a**2).sum(axis=1)*np.ones([1,b.shape[0]]).T).T + \
-#            np.ones([a.shape[0],1])*(b**2).sum(axis=1)-2*(np.dot(a,b.T)))
-#        return d
-
-    X = x
 
     # Create distance matrix unless given by parameters
     if inputdist == 'distance':
-        xD = X
+        D = x
+        if init == 'default':
+            init = 'cmdscale'
     else:
-        xD = cdist(X, X)
+        D = cdist(x, x)
+        if init == 'default':
+            init = 'pca'
+
+    if inputdist == 'distance' and init == 'pca':
+        raise ValueError("Cannot use init == 'pca' when inputdist == 'distance'")
+
+    if np.count_nonzero(np.diagonal(D)) > 0:
+        raise ValueError("The diagonal of the dissimilarity matrix must be zero")
 
     # Remaining initialisation
-    N = X.shape[0] # hmmm, shape[1]?
-    scale = 0.5 / xD.sum()
+    N = x.shape[0]
+    scale = 0.5 / D.sum()
+    D = D + np.eye(N)     
 
+    if np.count_nonzero(D<=0) > 0:
+        raise ValueError("Off-diagonal dissimilarities must be strictly positive")   
+
+    Dinv = 1 / D
     if init == 'pca':
-        [UU,DD,_] = np.linalg.svd(X)
-        Y = UU[:,:n]*DD[:n] 
+        [UU,DD,_] = np.linalg.svd(x)
+        y = UU[:,:n]*DD[:n] 
+    elif init == 'cmdscale':
+        from cmdscale import cmdscale
+        y,e = cmdscale(D)
+        y = y[:,:n]
     else:
-        Y = np.random.normal(0.0,1.0,[N,n])
+        y = np.random.normal(0.0,1.0,[N,n])
     one = np.ones([N,n])
-
-    xD = xD + np.eye(N)        
-    xDinv = 1 / xD # Returns inf where D = 0.
-    xDinv[np.isinf(xDinv)] = 0 # Fix by replacing inf with 0 (default Matlab behaviour).    
-    yD = cdist(Y, Y) + np.eye(N)
-    yDinv = 1. / yD # Returns inf where d = 0. 
-    
-    np.fill_diagonal(xD, 1)    
-    np.fill_diagonal(yD, 1)
-    np.fill_diagonal(xDinv, 0)
-    np.fill_diagonal(yDinv, 0)
-    
-    xDinv[np.isnan(xDinv)] = 0
-    yDinv[np.isnan(xDinv)] = 0
-    xDinv[np.isinf(xDinv)] = 0    
-    yDinv[np.isinf(yDinv)] = 0 # Fix by replacing inf with 0 (default Matlab behaviour).
-    
-    delta = xD - yD 
-    E = ((delta**2)*xDinv).sum() 
+    d = cdist(y,y) + np.eye(N)
+    dinv = 1. / d
+    delta = D-d 
+    E = ((delta**2)*Dinv).sum() 
 
     # Get on with it
     for i in range(maxiter):
@@ -112,35 +111,34 @@ def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 5
         # 1/4 of the gradient and Hessian, but the step size is just the ratio
         # of the gradient and the diagonal of the Hessian so it doesn't
         # matter).
-        delta = yDinv - xDinv
+        delta = dinv - Dinv
         deltaone = np.dot(delta,one)
-        g = np.dot(delta, Y) - (Y * deltaone)
-        dinv3 = yDinv ** 3
-        y2 = Y ** 2
-        H = np.dot(dinv3,y2) - deltaone - np.dot(2, Y) * np.dot(dinv3, Y) + y2 * np.dot(dinv3,one)
+        g = np.dot(delta,y) - (y * deltaone)
+        dinv3 = dinv ** 3
+        y2 = y ** 2
+        H = np.dot(dinv3,y2) - deltaone - np.dot(2,y) * np.dot(dinv3,y) + y2 * np.dot(dinv3,one)
         s = -g.flatten(order='F') / np.abs(H.flatten(order='F'))
-        y_old = Y
+        y_old    = y
 
         # Use step-halving procedure to ensure progress is made
         for j in range(maxhalves):
-            s_reshape = s.reshape(2,len(s)/2).T
+            s_reshape = np.reshape(s, (-1,n),order='F')
             y = y_old + s_reshape
             d = cdist(y, y) + np.eye(N)
-            dinv = 1 / d # Returns inf where D = 0. 
-            dinv[np.isinf(dinv)] = 0 # Fix by replacing inf with 0 (default Matlab behaviour).
-            delta = xD - d
-            E_new = ((delta**2)*xDinv).sum()
+            dinv = 1 / d
+            delta = D - d
+            E_new = ((delta**2)*Dinv).sum()
             if E_new < E:
                 break
             else:
-                s = np.dot(0.5,s)
+                s = 0.5*s
 
         # Bomb out if too many halving steps are required
-        if j == maxhalves:
+        if j == maxhalves-1:
             print('Warning: maxhalves exceeded. Sammon mapping may not converge...')
 
         # Evaluate termination criterion
-        if np.abs((E - E_new) / E) < tolfun:
+        if abs((E - E_new) / E) < tolfun:
             if display:
                 print('TolFun exceeded: Optimisation terminated')
             break
@@ -148,7 +146,10 @@ def sammon(x, n = 2, display = 2, inputdist = 'raw', maxhalves = 20, maxiter = 5
         # Report progress
         E = E_new
         if display > 1:
-            print('epoch = ' + str(i) + ': E = ' + str(E * scale))
+            print('epoch = %d : E = %12.10f'% (i+1, E * scale))
+
+    if i == maxiter-1:
+        print('Warning: maxiter exceeded. Sammon mapping may not have converged...')
 
     # Fiddle stress to match the original Sammon paper
     E = E * scale
